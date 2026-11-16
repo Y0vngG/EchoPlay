@@ -46,3 +46,7 @@ python -m build_support.package_portable
 ```powershell
 python -m unittest discover -s tests -v
 ```
+
+## 致谢
+
+B 站接口格式解析参考了 [yt-dlp 的 B 站取流实现](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/extractor/bilibili.py)。
