@@ -1,0 +1,14 @@
+2026-11-16 17:11:36 INFO [echoplay] EchoPlay starting
+2026-11-16 17:11:36 INFO [echoplay] Added Qt plugin path: E:\Anaconda\envs\echoplay\Lib\site-packages\PySide6\plugins
+2026-11-16 17:11:36 INFO [echoplay.worker] Worker started: fetch_account_profile
+2026-11-16 17:11:36 INFO [echoplay.ui] Restored taskbar icon: source=current
+2026-11-16 17:11:36 INFO [echoplay.worker] Worker finished: fetch_account_profile
+2026-11-16 17:11:36 INFO [echoplay.worker] Worker started: fetch_account_avatar
+2026-11-16 17:11:36 INFO [echoplay.worker] Worker finished: fetch_account_avatar
+2026-11-16 17:11:39 INFO [echoplay.ui] Saved taskbar icon: source=excel
+2026-11-16 17:11:40 INFO [echoplay.ui] Saved taskbar icon: source=word
+2026-11-16 17:11:40 INFO [echoplay.ui] Saved taskbar icon: source=wps_spreadsheet
+2026-11-16 17:11:41 INFO [echoplay.ui] Saved taskbar icon: source=wps_writer
+2026-11-16 17:11:41 INFO [echoplay.ui] Saved taskbar icon: source=excel
+2026-11-16 17:11:42 INFO [echoplay.ui] Saved taskbar icon: source=current
+2026-11-16 17:11:48 INFO [echoplay] EchoPlay shutting down
