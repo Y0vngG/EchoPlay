@@ -4,7 +4,7 @@
 
 [![下载 Windows 便携版 ZIP](https://img.shields.io/badge/Windows-%E4%B8%8B%E8%BD%BD%E4%BE%BF%E6%90%BA%E7%89%88-0078D4?style=for-the-badge)](https://github.com/Y0vngG/EchoPlay/releases/latest/download/EchoPlay-Windows.zip)
 
-完整解压 ZIP 后，双击文件夹中的 EchoPlay EXE 即可运行，无需安装 Python。请将 EXE 和 `_internal` 文件夹放在一起。
+完整解压 ZIP 后，双击文件夹中的 EchoPlay EXE 即可运行，无需配置 Python 环境。请将 EXE 和 `_internal` 文件夹放在一起。
 
 ## 主要功能
 
