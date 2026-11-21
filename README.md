@@ -45,11 +45,13 @@ python -m build_support.package_portable
 
 ### 自动更新发布约定
 
-1. 修改 `echoplay/version.py` 中的 `VERSION`（当前为 `0.2.4`），版本号使用 `主版本.次版本.补丁版本`。
+1. 修改 `echoplay/version.py` 中的 `VERSION`（当前为 `0.2.5`），版本号使用 `主版本.次版本.补丁版本`。
 2. 按上述命令重新打包，文件名、EXE 版本信息和包内 `update.json` 会同步生成。
-3. 在 `Y0vngG/EchoPlay` 创建对应标签（如 `v0.2.4`）的正式 Release，上传 `dist/EchoPlay-Windows.zip`，并设为 Latest。更新包版本必须与标签一致；草稿、预发布及较旧版本不会触发更新。
+3. 在 `Y0vngG/EchoPlay` 创建对应标签（如 `v0.2.5`）的正式 Release，上传 `dist/EchoPlay-Windows.zip` 和自动生成的 `dist/SHA256SUMS.txt`，并设为 Latest。更新包版本必须与标签一致；草稿、预发布及较旧版本不会触发更新。
 
-更新器使用 GitHub Release 资产的 SHA-256 校验值，缺少校验值时跳过更新。应用目录的父目录需要可写，并有足够空间下载、解压。更新会保留原 EXE 文件名，已有快捷方式继续有效；曲库、设置和登录状态仍位于用户目录。旧应用目录保留为同级 `.backup-…` 文件夹，确认新版正常后可手动删除；安装失败的日志位于同级 `.echoplay-update-…/error.log`。
+更新器使用 GitHub Release 资产的 SHA-256 校验值；API 被限流或暂时不可用时，改从官方最新发布页识别版本，并读取该版本的 `SHA256SUMS.txt` 校验更新包。两条路径都要求有效校验值，否则跳过更新。应用目录的父目录需要可写，并有足够空间下载、解压。更新会保留原 EXE 文件名，已有快捷方式继续有效；曲库、设置和登录状态仍位于用户目录。旧应用目录保留为同级 `.backup-…` 文件夹，确认新版正常后可手动删除；安装失败的日志位于同级 `.echoplay-update-…/error.log`。
+
+已发布的 0.2.3 和 0.2.4 使用原来的 API 检查方式，不包含上述备用路径；遇到 GitHub API 限流时可等待额度恢复，或从 Releases 手动下载更新。修改源码不会改变已经发布的 EXE。
 
 自动替换仅用于 Windows 打包版，源码运行不会覆盖项目文件。`0.2.2` 及更早的旧版尚未包含更新器，需要先手动升级到 `0.2.3`，之后即可自动更新。
 

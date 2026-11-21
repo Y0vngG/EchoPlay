@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 from zipfile import ZipFile
@@ -52,9 +53,16 @@ def _request(url):
 
 
 def check_release(current=VERSION) -> Release | None:
-    with urlopen(_request(f"https://api.github.com/repos/{REPOSITORY}/releases/latest"),
-                 timeout=15) as response:
-        data = json.loads(response.read(2 * 1024 * 1024))
+    try:
+        with urlopen(_request(f"https://api.github.com/repos/{REPOSITORY}/releases/latest"),
+                     timeout=15) as response:
+            data = json.loads(response.read(2 * 1024 * 1024))
+    except HTTPError as exc:
+        if exc.code not in (403, 429) and exc.code < 500:
+            raise
+        return _check_release_from_downloads(current)
+    except (URLError, TimeoutError):
+        return _check_release_from_downloads(current)
     if data.get("draft") or data.get("prerelease"):
         return None
     version = data["tag_name"]
@@ -76,6 +84,40 @@ def check_release(current=VERSION) -> Release | None:
     if not 0 < size <= MAX_ARCHIVE:
         raise ValueError("更新包大小异常。")
     return Release(version.lstrip("v"), url, size, digest[7:].lower())
+
+
+def _check_release_from_downloads(current: str) -> Release | None:
+    """Use public release downloads when the REST API is unavailable.
+
+    SHA256SUMS.txt has shipped since 0.2.3, so this also works for existing
+    releases. Always resolve Latest once, then pin both files to that tag.
+    """
+    base = f"https://github.com/{REPOSITORY}/releases"
+    with urlopen(_request(base + "/latest"), timeout=15) as response:
+        latest = urlsplit(response.geturl())
+    match = re.fullmatch(f"/{re.escape(REPOSITORY)}/releases/tag/(v?\\d+\\.\\d+\\.\\d+)",
+                         latest.path)
+    if latest.scheme != "https" or latest.netloc != "github.com" or not match:
+        raise ValueError("无法识别官方最新正式版本。")
+    tag = match[1]
+    if version_tuple(tag) <= version_tuple(current):
+        return None
+    base += f"/download/{tag}/"
+    with urlopen(_request(base + "SHA256SUMS.txt"), timeout=15) as response:
+        checksums = response.read(65537)
+    if len(checksums) > 65536:
+        raise ValueError("更新校验文件大小异常。")
+    digests = re.findall(r"^([0-9a-fA-F]{64}) [ *]" + re.escape(RELEASE_ASSET) + r"\r?$",
+                         checksums.decode("utf-8-sig"), re.MULTILINE)
+    if len(digests) != 1:
+        raise ValueError("更新校验文件缺少唯一的 ZIP SHA-256。")
+    url = base + RELEASE_ASSET
+    request = Request(url, method="HEAD", headers={"User-Agent": f"EchoPlay/{VERSION}"})
+    with urlopen(request, timeout=15) as response:
+        size = int(response.headers.get("Content-Length", "0"))
+    if not 0 < size <= MAX_ARCHIVE:
+        raise ValueError("更新包大小异常。")
+    return Release(tag.lstrip("v"), url, size, digests[0].lower())
 
 
 def extract_payload(archive: Path, destination: Path, version: str) -> Path:
