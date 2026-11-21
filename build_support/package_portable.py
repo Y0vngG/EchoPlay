@@ -1,23 +1,29 @@
 """Archive the completed PyInstaller folder and verify ZIP integrity."""
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
+import json
+
+from echoplay.version import APP_NAME, RELEASE_ASSET, VERSION
 
 
 def main():
     dist = Path(__file__).resolve().parents[1] / "dist"
-    folder = dist / "EchoPlay - 0.2.2"
-    if not (folder / "EchoPlay - 0.2.2.exe").is_file():
+    folder = dist / APP_NAME
+    if not (folder / (APP_NAME + ".exe")).is_file():
         raise SystemExit("Run PyInstaller with EchoPlay.spec first")
     (folder / "使用说明.txt").write_text(
-        "EchoPlay 0.2.2 免安装版\n\n"
-        "请先完整解压 ZIP，再运行 EchoPlay - 0.2.2.exe。\n"
+        f"EchoPlay {VERSION} 免安装版\n\n"
+        f"请先完整解压 ZIP，再运行 {APP_NAME}.exe。\n"
         "请勿在压缩包内直接运行，也不要单独移动 EXE；"
         "_internal 文件夹必须与 EXE 放在一起。\n"
         "无需安装 Python。曲库和登录数据保存在当前 Windows 用户目录。\n",
         encoding="utf-8-sig",
     )
+    (folder / "update.json").write_text(json.dumps({
+        "version": VERSION, "executable": APP_NAME + ".exe",
+    }), encoding="utf-8")
     files = sorted(path for path in folder.rglob("*") if path.is_file())
-    archive = dist / (folder.name + ".zip")
+    archive = dist / RELEASE_ASSET
     with ZipFile(archive, "w", ZIP_DEFLATED, compresslevel=6) as output:
         for path in files:
             output.write(path, path.relative_to(dist))

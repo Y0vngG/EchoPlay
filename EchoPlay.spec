@@ -8,6 +8,16 @@ sys.path.insert(0, str(ROOT))
 from build_support.payload import trim_payload, validate_required_files, validate_native_dependencies
 from build_support.payload import trim_unreferenced_qt_libraries
 from build_support.payload import UNUSED_QT_BINDINGS
+from echoplay.version import APP_NAME, VERSION
+from PyInstaller.utils.win32.versioninfo import load_version_info_from_text_file
+version_info = load_version_info_from_text_file(str(ROOT / "assets" / "version_info.txt"))
+version_info.ffi.filevers = version_info.ffi.prodvers = tuple(map(int, VERSION.split("."))) + (0,)
+for table in version_info.kids[0].kids:
+    for entry in table.kids:
+        if entry.name in ("FileVersion", "ProductVersion"):
+            entry.val = VERSION
+        elif entry.name == "OriginalFilename":
+            entry.val = APP_NAME + ".exe"
 qt_plugin_categories = {"imageformats", "multimedia", "platforms", "styles"}
 qt_plugin_binaries = [
     (source, destination)
@@ -47,8 +57,8 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="EchoPlay - 0.2.2",
-    version=str(ROOT / "assets" / "version_info.txt"),
+    name=APP_NAME,
+    version=version_info,
     icon=str(ROOT / "assets" / "app_icon.ico"),
     debug=False,
     bootloader_ignore_signals=False,
@@ -67,5 +77,5 @@ coll = COLLECT(
     a.datas,
     strip=False,
     upx=False,
-    name="EchoPlay - 0.2.2",
+    name=APP_NAME,
 )
