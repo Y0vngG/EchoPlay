@@ -14,7 +14,6 @@
 - 支持 B 站扫码登录，登录状态加密保存在本机。
 - 提供亮暗主题、Excel 皮肤，以及可自定义的快捷键和任务栏图标。
 - 设置页面最下方显示当前软件版本号。
-- Windows 便携版启动后自动检查 GitHub 最新正式版，下载并校验更新包后，提示 10 秒再自动更新、重启。网络不可用或校验失败时继续使用当前版本，下次启动重试。
 
 播放品质默认使用 1080P 档，选择最高可用的非 HiRes 音轨并优先使用杜比音轨。360P 档从对应的视频流播放声音。HiRes 档需要有效大会员，视频未提供无损音轨时回退到 1080P 档。
 
@@ -58,7 +57,3 @@ python -m build_support.package_portable
 ```powershell
 python -m unittest discover -s tests -v
 ```
-
-## 致谢
-
-B 站接口格式解析参考了 [yt-dlp 的 B 站取流实现](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/extractor/bilibili.py)。
