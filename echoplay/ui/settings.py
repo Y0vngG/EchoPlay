@@ -35,6 +35,7 @@ from echoplay.ui.icons import (
     _make_excel_skin_preview_icon,
 )
 from echoplay.ui.widgets import SmoothScrollArea, SettingsDetailLabel
+from echoplay.version import VERSION
 
 
 class SettingsMixin:
@@ -109,6 +110,8 @@ class SettingsMixin:
         settings_content_layout.addWidget(self._make_taskbar_icon_section())
         settings_content_layout.addWidget(self._make_settings_separator())
         settings_content_layout.addWidget(self._make_skin_section())
+        settings_content_layout.addWidget(self._make_settings_separator())
+        settings_content_layout.addWidget(self._make_version_section())
         settings_content_layout.addStretch(1)
 
         scroll_area = SmoothScrollArea()
@@ -120,6 +123,20 @@ class SettingsMixin:
         scroll_area.setWidget(settings_content)
         layout.addWidget(scroll_area, 1)
         return page
+
+    def _make_version_section(self) -> QWidget:
+        section = QWidget()
+        section.setObjectName("settingsSection")
+        layout = QVBoxLayout(section)
+        layout.setContentsMargins(0, 12, 0, 12)
+        layout.setSpacing(10)
+        title = QLabel("版本说明")
+        title.setObjectName("settingsSectionTitle")
+        description = SettingsDetailLabel(f"当前软件版本：{VERSION}")
+        description.setObjectName("settingsDescription")
+        layout.addWidget(title)
+        layout.addWidget(description)
+        return section
 
     def _make_quality_section(self) -> QWidget:
         section = QWidget()
