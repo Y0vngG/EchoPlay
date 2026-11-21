@@ -61,7 +61,6 @@ class UpdateControllerTests(unittest.TestCase):
         close.assert_not_called()
         self.assertFalse(self.controller.installing)
         self.assertIn("下次启动", self.window.statusBar().currentMessage())
-        self.assertIn("blocked", self.window.statusBar().currentMessage())
 
 
 if __name__ == "__main__":

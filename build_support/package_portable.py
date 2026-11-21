@@ -2,7 +2,6 @@
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 import json
-import hashlib
 
 from echoplay.version import APP_NAME, RELEASE_ASSET, VERSION
 
@@ -31,11 +30,6 @@ def main():
     with ZipFile(archive) as output:
         if bad_file := output.testzip():
             raise RuntimeError(f"ZIP integrity check failed: {bad_file}")
-    with archive.open("rb") as source:
-        checksum = hashlib.file_digest(source, "sha256").hexdigest()
-    (dist / "SHA256SUMS.txt").write_text(
-        f"{checksum}  {archive.name}\n", encoding="utf-8"
-    )
     print(f"ZIP verified: {archive.name}, {archive.stat().st_size} bytes, "
           f"{len(files)} files, {sum(path.stat().st_size for path in files)} bytes unpacked")
 

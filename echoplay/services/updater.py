@@ -12,7 +12,6 @@ import subprocess
 import sys
 import tempfile
 import time
-from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 from zipfile import ZipFile
@@ -53,16 +52,9 @@ def _request(url):
 
 
 def check_release(current=VERSION) -> Release | None:
-    try:
-        with urlopen(_request(f"https://api.github.com/repos/{REPOSITORY}/releases/latest"),
-                     timeout=15) as response:
-            data = json.loads(response.read(2 * 1024 * 1024))
-    except HTTPError as exc:
-        if exc.code not in (403, 429) and exc.code < 500:
-            raise
-        return _check_release_from_downloads(current)
-    except (URLError, TimeoutError):
-        return _check_release_from_downloads(current)
+    with urlopen(_request(f"https://api.github.com/repos/{REPOSITORY}/releases/latest"),
+                 timeout=15) as response:
+        data = json.loads(response.read(2 * 1024 * 1024))
     if data.get("draft") or data.get("prerelease"):
         return None
     version = data["tag_name"]
@@ -84,40 +76,6 @@ def check_release(current=VERSION) -> Release | None:
     if not 0 < size <= MAX_ARCHIVE:
         raise ValueError("更新包大小异常。")
     return Release(version.lstrip("v"), url, size, digest[7:].lower())
-
-
-def _check_release_from_downloads(current: str) -> Release | None:
-    """Use public release downloads when the REST API is unavailable.
-
-    SHA256SUMS.txt has shipped since 0.2.3, so this also works for existing
-    releases. Always resolve Latest once, then pin both files to that tag.
-    """
-    base = f"https://github.com/{REPOSITORY}/releases"
-    with urlopen(_request(base + "/latest"), timeout=15) as response:
-        latest = urlsplit(response.geturl())
-    match = re.fullmatch(f"/{re.escape(REPOSITORY)}/releases/tag/(v?\\d+\\.\\d+\\.\\d+)",
-                         latest.path)
-    if latest.scheme != "https" or latest.netloc != "github.com" or not match:
-        raise ValueError("无法识别官方最新正式版本。")
-    tag = match[1]
-    if version_tuple(tag) <= version_tuple(current):
-        return None
-    base += f"/download/{tag}/"
-    with urlopen(_request(base + "SHA256SUMS.txt"), timeout=15) as response:
-        checksums = response.read(65537)
-    if len(checksums) > 65536:
-        raise ValueError("更新校验文件大小异常。")
-    digests = re.findall(r"^([0-9a-fA-F]{64}) [ *]" + re.escape(RELEASE_ASSET) + r"\r?$",
-                         checksums.decode("utf-8-sig"), re.MULTILINE)
-    if len(digests) != 1:
-        raise ValueError("更新校验文件缺少唯一的 ZIP SHA-256。")
-    url = base + RELEASE_ASSET
-    request = Request(url, method="HEAD", headers={"User-Agent": f"EchoPlay/{VERSION}"})
-    with urlopen(request, timeout=15) as response:
-        size = int(response.headers.get("Content-Length", "0"))
-    if not 0 < size <= MAX_ARCHIVE:
-        raise ValueError("更新包大小异常。")
-    return Release(tag.lstrip("v"), url, size, digests[0].lower())
 
 
 def extract_payload(archive: Path, destination: Path, version: str) -> Path:
@@ -224,7 +182,6 @@ try {
     [IO.Directory]::Move($payload, $target)
     $installed = $true
     Start-Process -FilePath (Join-Path $target $config.executable) -WorkingDirectory $target -WindowStyle Hidden
-    [IO.File]::WriteAllText((Join-Path $work 'completed'), 'installed')
 } catch {
     $_ | Out-String | Set-Content -LiteralPath (Join-Path $work 'error.log') -Encoding UTF8
     if ($moved) {
@@ -246,34 +203,15 @@ def launch_installer(update: PreparedUpdate):
     script = update.work / "install.ps1"
     script.write_text(INSTALL_SCRIPT, encoding="utf-8-sig")
     powershell = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
-    environment = dict(os.environ, PYINSTALLER_RESET_ENVIRONMENT="1")
-    frozen = getattr(sys, "frozen", False)
-    if frozen:
-        import ctypes
-        bundle = Path(sys._MEIPASS).resolve()
-        environment["PATH"] = os.pathsep.join(
-            entry for entry in environment.get("PATH", "").split(os.pathsep)
-            if entry and not Path(entry).resolve().is_relative_to(bundle)
-        )
-        # PyInstaller's DLL search directory is inherited by system programs.
-        ctypes.windll.kernel32.SetDllDirectoryW(None)
-    try:
-        with (update.work / "installer-startup.log").open("wb") as log:
-            process = subprocess.Popen(
-                [str(powershell), "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
-                 "-File", str(script)], cwd=update.work, env=environment,
-                # DETACHED_PROCESS causes Windows PowerShell to exit before
-                # executing -File on some systems. CREATE_NO_WINDOW is enough.
-                creationflags=subprocess.CREATE_NO_WINDOW,
-                stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT)
-    finally:
-        if frozen:
-            ctypes.windll.kernel32.SetDllDirectoryW(str(bundle))
+    process = subprocess.Popen([str(powershell), "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+                      "-File", str(script)], cwd=update.work,
+                     creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
+                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     deadline = time.monotonic() + 5
     while not (update.work / "ready").is_file():
         if process.poll() is not None or time.monotonic() >= deadline:
             if process.poll() is None:
                 process.terminate()
                 process.wait(timeout=5)
-            raise RuntimeError(f"无法启动更新安装器，继续使用当前版本。详情：{update.work / 'installer-startup.log'}")
+            raise RuntimeError("无法启动更新安装器，继续使用当前版本。")
         time.sleep(0.05)

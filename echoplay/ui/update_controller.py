@@ -74,8 +74,7 @@ class UpdateController(QObject):
 
     def _failed(self, message):
         logging.getLogger("echoplay.updater").warning("Update skipped: %s", message)
-        reason = " ".join(str(message).split())[:180]
-        self._status(f"自动更新暂不可用：{reason}；下次启动会重试。")
+        self._status("自动更新暂不可用，下次启动会重试。")
 
     def _stop(self):
         self.cancelled.set()
