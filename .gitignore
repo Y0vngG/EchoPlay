@@ -1,0 +1,15 @@
+.venv/
+.idea/
+.vscode/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+.env.*
+!.env.example
+data/
+logs/
+vendor/mpv/**
+!vendor/mpv/README.md
+build/
+dist/
