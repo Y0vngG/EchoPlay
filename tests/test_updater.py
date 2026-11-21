@@ -178,6 +178,54 @@ class UpdateTests(unittest.TestCase):
                 extract_payload(archive, directory / "out", "0.2.5")
 
     @unittest.skipUnless(sys.platform == "win32", "Windows installer")
+    def test_launcher_survives_parent_exit_then_swaps_and_restarts(self):
+        """Exercise launch_installer itself, including Windows creation flags."""
+        code = '''
+import sys
+from pathlib import Path
+from echoplay.services.updater import PreparedUpdate, launch_installer
+root = Path(sys.argv[1])
+launch_installer(PreparedUpdate(root / "work", root / "work/payload", root / "app", "EchoPlay.exe", "0.2.7"))
+print("ready", flush=True)
+'''
+        with tempfile.TemporaryDirectory(prefix="更新启动 ' ") as directory:
+            root = Path(directory)
+            target, work = root / "app", root / "work"
+            payload = work / "payload"
+            target.mkdir()
+            payload.mkdir(parents=True)
+            (target / "EchoPlay.exe").write_bytes(b"old")
+            (target / "old.txt").write_text("backup")
+            (payload / "EchoPlay.exe").write_bytes(
+                (Path(os.environ["SystemRoot"]) / "System32/whoami.exe").read_bytes())
+            (payload / "new.txt").write_text("installed")
+            result = subprocess.run([sys.executable, "-c", code, str(root)],
+                                    cwd=Path(__file__).resolve().parents[1],
+                                    capture_output=True, timeout=15)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(b"ready", result.stdout)
+            deadline = time.monotonic() + 15
+            while not (work / "completed").exists():
+                if (work / "error.log").exists():
+                    self.fail((work / "error.log").read_text(encoding="utf-8-sig"))
+                if time.monotonic() >= deadline:
+                    self.fail("Installer did not survive parent exit")
+                time.sleep(0.05)
+            self.assertTrue((target / "new.txt").exists())
+            backups = list(root.glob("app.backup-*"))
+            self.assertEqual(len(backups), 1)
+            self.assertTrue((backups[0] / "old.txt").exists())
+            # Wait for the short-lived launched EXE to release its file lock.
+            while True:
+                try:
+                    (target / "EchoPlay.exe").unlink()
+                    break
+                except PermissionError:
+                    if time.monotonic() >= deadline:
+                        raise
+                    time.sleep(0.05)
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows installer")
     def test_real_powershell_swap_and_rollback_with_unicode_and_spaces(self):
         powershell = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
         for fail in (False, True):

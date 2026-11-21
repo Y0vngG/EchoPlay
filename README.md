@@ -45,9 +45,9 @@ python -m build_support.package_portable
 
 ### 自动更新发布约定
 
-1. 修改 `echoplay/version.py` 中的 `VERSION`（当前为 `0.2.6`），版本号使用 `主版本.次版本.补丁版本`。
+1. 修改 `echoplay/version.py` 中的 `VERSION`（当前为 `0.2.7`），版本号使用 `主版本.次版本.补丁版本`。
 2. 按上述命令重新打包，文件名、EXE 版本信息和包内 `update.json` 会同步生成。
-3. 在 `Y0vngG/EchoPlay` 创建对应标签（如 `v0.2.6`）的正式 Release，上传 `dist/EchoPlay-Windows.zip` 和自动生成的 `dist/SHA256SUMS.txt`，并设为 Latest。更新包版本必须与标签一致；草稿、预发布及较旧版本不会触发更新。
+3. 在 `Y0vngG/EchoPlay` 创建对应标签（如 `v0.2.7`）的正式 Release，上传 `dist/EchoPlay-Windows.zip` 和自动生成的 `dist/SHA256SUMS.txt`，并设为 Latest。更新包版本必须与标签一致；草稿、预发布及较旧版本不会触发更新。
 
 更新器使用 GitHub Release 资产的 SHA-256 校验值；API 被限流或暂时不可用时，改从官方最新发布页识别版本，并读取该版本的 `SHA256SUMS.txt` 校验更新包。两条路径都要求有效校验值，否则跳过更新。应用目录的父目录需要可写，并有足够空间下载、解压。更新会保留原 EXE 文件名，已有快捷方式继续有效；曲库、设置和登录状态仍位于用户目录。旧应用目录保留为同级 `.backup-…` 文件夹，确认新版正常后可手动删除；安装失败的日志位于同级 `.echoplay-update-…/error.log`。
 
@@ -64,3 +64,5 @@ python -m unittest discover -s tests -v
 ## 致谢
 
 B 站接口格式解析参考了 [yt-dlp 的 B 站取流实现](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/extractor/bilibili.py)。
+
+0.2.7 修复了 Windows PowerShell 安装器的启动参数，并记录安装器启动日志。已发布的 0.2.5 / 0.2.6 若提示无法启动安装器，需要手动升级到 0.2.7 一次。

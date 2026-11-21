@@ -224,6 +224,7 @@ try {
     [IO.Directory]::Move($payload, $target)
     $installed = $true
     Start-Process -FilePath (Join-Path $target $config.executable) -WorkingDirectory $target -WindowStyle Hidden
+    [IO.File]::WriteAllText((Join-Path $work 'completed'), 'installed')
 } catch {
     $_ | Out-String | Set-Content -LiteralPath (Join-Path $work 'error.log') -Encoding UTF8
     if ($moved) {
@@ -245,15 +246,34 @@ def launch_installer(update: PreparedUpdate):
     script = update.work / "install.ps1"
     script.write_text(INSTALL_SCRIPT, encoding="utf-8-sig")
     powershell = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
-    process = subprocess.Popen([str(powershell), "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
-                      "-File", str(script)], cwd=update.work,
-                     creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
-                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    environment = dict(os.environ, PYINSTALLER_RESET_ENVIRONMENT="1")
+    frozen = getattr(sys, "frozen", False)
+    if frozen:
+        import ctypes
+        bundle = Path(sys._MEIPASS).resolve()
+        environment["PATH"] = os.pathsep.join(
+            entry for entry in environment.get("PATH", "").split(os.pathsep)
+            if entry and not Path(entry).resolve().is_relative_to(bundle)
+        )
+        # PyInstaller's DLL search directory is inherited by system programs.
+        ctypes.windll.kernel32.SetDllDirectoryW(None)
+    try:
+        with (update.work / "installer-startup.log").open("wb") as log:
+            process = subprocess.Popen(
+                [str(powershell), "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+                 "-File", str(script)], cwd=update.work, env=environment,
+                # DETACHED_PROCESS causes Windows PowerShell to exit before
+                # executing -File on some systems. CREATE_NO_WINDOW is enough.
+                creationflags=subprocess.CREATE_NO_WINDOW,
+                stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT)
+    finally:
+        if frozen:
+            ctypes.windll.kernel32.SetDllDirectoryW(str(bundle))
     deadline = time.monotonic() + 5
     while not (update.work / "ready").is_file():
         if process.poll() is not None or time.monotonic() >= deadline:
             if process.poll() is None:
                 process.terminate()
                 process.wait(timeout=5)
-            raise RuntimeError("无法启动更新安装器，继续使用当前版本。")
+            raise RuntimeError(f"无法启动更新安装器，继续使用当前版本。详情：{update.work / 'installer-startup.log'}")
         time.sleep(0.05)
