@@ -2,7 +2,7 @@
 
 一款支持 B 站音轨播放和本地歌单管理的 Windows 桌面播放器。
 
-[![下载 Windows 便携版 ZIP](https://img.shields.io/badge/Windows-%E4%B8%8B%E8%BD%BD%E4%BE%BF%E6%90%BA%E7%89%88-0078D4?style=for-the-badge)](https://github.com/Y0vngG/EchoPlay/releases/latest/download/EchoPlay-Windows.zip)
+[![下载 Windows 便携版 ZIP](https://img.shields.io/badge/Windows-%E4%B8%8B%E8%BD%BD%E4%BE%BF%E6%90%BA%E7%89%88-0078D4?style=for-the-badge)](https://github.com/Y0vngG/EchoPlay/releases/latest/download/EchoPlay-Windows-0.2.4.zip)
 
 完整解压 ZIP 后，双击文件夹中的 EchoPlay EXE 即可运行，无需安装 Python。请将 EXE 和 `_internal` 文件夹放在一起。
 
@@ -40,7 +40,7 @@ python -m PyInstaller --noconfirm EchoPlay.spec
 python -m build_support.package_portable
 ```
 
-打包完成后，便携版 ZIP 位于 `dist/` 目录。发布新版本时，将 ZIP 以 `EchoPlay-Windows.zip` 的文件名上传到 GitHub Release，下载按钮即可指向最新版本。
+打包完成后，便携版 ZIP 位于 `dist/` 目录，文件名为 `EchoPlay-Windows-0.2.4.zip`。发布新版本时，将对应版本的 ZIP 上传到 GitHub Release。
 
 ## 测试
 
