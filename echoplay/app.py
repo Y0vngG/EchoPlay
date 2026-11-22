@@ -3,7 +3,7 @@ import faulthandler
 import logging
 import sys
 
-from PySide6.QtCore import QCoreApplication, Qt, QTimer
+from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 import PySide6
@@ -12,7 +12,6 @@ from echoplay.services.app_logging import configure_logging
 from echoplay.services.single_instance import SingleInstance, activate_window
 from echoplay.storage import LibraryStore
 from echoplay.ui.main_window import MainWindow
-from echoplay.ui.update_controller import UpdateController
 from echoplay.version import VERSION
 
 
@@ -56,8 +55,6 @@ def main() -> int:
     window.apply_saved_taskbar_icon()
     instance.activation_requested.connect(lambda: activate_window(window))
     window.show()
-    updater = UpdateController(window)
-    QTimer.singleShot(2000, updater.start)
     try:
         return app.exec()
     finally:

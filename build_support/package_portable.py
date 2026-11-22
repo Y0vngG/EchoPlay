@@ -1,7 +1,6 @@
 """Archive the completed PyInstaller folder and verify ZIP integrity."""
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
-import json
 
 from echoplay.version import APP_NAME, RELEASE_ASSET, VERSION
 
@@ -19,9 +18,6 @@ def main():
         "无需安装 Python。曲库和登录数据保存在当前 Windows 用户目录。\n",
         encoding="utf-8-sig",
     )
-    (folder / "update.json").write_text(json.dumps({
-        "version": VERSION, "executable": APP_NAME + ".exe",
-    }), encoding="utf-8")
     files = sorted(path for path in folder.rglob("*") if path.is_file())
     archive = dist / RELEASE_ASSET
     with ZipFile(archive, "w", ZIP_DEFLATED, compresslevel=6) as output:
